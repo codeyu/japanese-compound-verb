@@ -1,1 +1,1 @@
-# japanese-compound-verb
+# 日本語複合動詞
