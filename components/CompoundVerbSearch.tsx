@@ -21,14 +21,14 @@ import { Switch } from "@/components/ui/switch"
 import { Moon, Sun, Settings, Volume2 } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
-import verbs from '@/data/verbs.json'
-import index from '@/data/index.json'
+import verbsData from '@/data/verbs.json'
+import indexData from '@/data/index.json'
 
 type Verb = {
   headword_id: number
   headword1: string
   reading: string
-  romaji: string // 追加
+  romaji: string
   senses: Array<{
     definition: string
     examples: Array<{
@@ -37,6 +37,17 @@ type Verb = {
     }>
   }>
 }
+
+type Index = {
+  [key: string]: {
+    start: number
+    end: number
+    count: number
+  }
+}
+
+const verbs = verbsData as Verb[]
+const index = indexData as Index
 
 export default function CompoundVerbSearch() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -52,7 +63,7 @@ export default function CompoundVerbSearch() {
     verb.romaji.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const indexedVerbs = selectedIndex
+  const indexedVerbs = selectedIndex && index[selectedIndex]
     ? verbs.slice(index[selectedIndex].start, index[selectedIndex].end + 1)
     : filteredVerbs
 
