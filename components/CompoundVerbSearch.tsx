@@ -32,6 +32,7 @@ type Verb = {
   romaji: string
   senses: Array<{
     definition: string
+    definition_en: string
     examples: Array<{
       example: string
       example_en: string
@@ -168,7 +169,7 @@ export default function CompoundVerbSearch() {
             <PopoverTrigger asChild>
               <Button variant="outline" size="icon">
                 <Settings className="h-[1.2rem] w-[1.2rem]" />
-                <span className="sr-only">設定を開く</span>
+                <span className="sr-only">��定を開く</span>
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80">
@@ -272,31 +273,48 @@ export default function CompoundVerbSearch() {
                   <CardDescription>{verb.reading}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="mb-2">{verb.senses[0].definition}</p>
-                  {verb.senses[0].examples && verb.senses[0].examples[0] && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">例文：</p>
-                      <div className="flex items-center">
-                        <p>{verb.senses[0].examples[0].example}</p>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => playAudio(verb.senses[0].examples[0].example)}
-                          aria-label="Play example sentence"
-                          className="ml-1 p-0 h-auto"
-                          disabled={
-                            audioState === 'loading' || 
-                            audioState === 'playing' ||
-                            (audioState === 'paused' && currentPlayingText !== verb.senses[0].examples[0].example)
-                          }
-                          data-state={currentPlayingText === verb.senses[0].examples[0].example ? audioState : 'idle'}
-                        >
-                          <Volume2 className="h-4 w-4 text-muted-foreground" />
-                        </Button>
+                  {verb.senses.map((sense, index) => (
+                    <div key={index} className="mb-4">
+                      {/* 词义部分 */}
+                      <div className="mb-2">
+                        <div className="flex items-start gap-2">
+                          <span className="text-sm font-medium text-muted-foreground">
+                            {index + 1}.
+                          </span>
+                          <div>
+                            <p>{sense.definition}</p>
+                            <p className="text-sm text-muted-foreground">{sense.definition_en}</p>
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-sm text-muted-foreground">{verb.senses[0].examples[0].example_en}</p>
+
+                      {/* 例句部分 */}
+                      {sense.examples && sense.examples[0] && (
+                        <div className="ml-5">
+                          <p className="text-sm text-muted-foreground">例文：</p>
+                          <div className="flex items-center">
+                            <p>{sense.examples[0].example}</p>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => playAudio(sense.examples[0].example)}
+                              aria-label="Play example sentence"
+                              className="ml-1 p-0 h-auto"
+                              disabled={
+                                audioState === 'loading' || 
+                                audioState === 'playing' ||
+                                (audioState === 'paused' && currentPlayingText !== sense.examples[0].example)
+                              }
+                              data-state={currentPlayingText === sense.examples[0].example ? audioState : 'idle'}
+                            >
+                              <Volume2 className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{sense.examples[0].example_en}</p>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  ))}
                 </CardContent>
               </Card>
             ) : (
