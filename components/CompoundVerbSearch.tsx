@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -75,7 +75,14 @@ export default function CompoundVerbSearch() {
   )
   const [audioState, setAudioState] = useState<'idle' | 'loading' | 'playing' | 'paused'>('idle');
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const { generateAudio } = useTTS();
+  const { generateAudio, cleanup } = useTTS();
+
+  useEffect(() => {
+    return () => {
+      cleanup();
+    };
+  }, [cleanup]);
+
   const playAudio = async (text: string) => {
     if (audioState === 'playing') {
       audioRef.current?.pause();
@@ -92,19 +99,17 @@ export default function CompoundVerbSearch() {
     setAudioState('loading');
     const voice = 'ja-JP-NanamiNeural';
     try {
-      const url = await generateAudio(text, voice, { pitch: 0, rate: 0 });
+      const url = await generateAudio(text, voice);
       const audio = new Audio(url);
       audioRef.current = audio;
       
       audio.onended = () => {
         setAudioState('idle');
-        URL.revokeObjectURL(url);
       };
 
       audio.onerror = (e) => {
         console.error('音频播放错误:', e);
         setAudioState('idle');
-        URL.revokeObjectURL(url);
       };
 
       await audio.play();
