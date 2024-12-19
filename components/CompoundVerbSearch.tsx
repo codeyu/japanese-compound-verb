@@ -305,7 +305,7 @@ export default function CompoundVerbSearch() {
                 <h4 className="font-medium leading-none">五十音索引</h4>
                 <div className="grid grid-cols-5 gap-2">
                   {Object.entries(index).map(([key, value]) => (
-                    <TooltipProvider key={key}>
+                    <TooltipProvider key={key} delayDuration={0}>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
@@ -320,7 +320,7 @@ export default function CompoundVerbSearch() {
                             {key}
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>
+                        <TooltipContent side="top">
                           <p>{value.count}語</p>
                         </TooltipContent>
                       </Tooltip>
