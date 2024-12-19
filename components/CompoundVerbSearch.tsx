@@ -20,6 +20,12 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { Moon, Sun, Settings, Volume2 } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 import verbsData from '@/data/verbs.json'
 import indexData from '@/data/index.json'
@@ -287,16 +293,56 @@ export default function CompoundVerbSearch() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="flex-grow"
           />
-          <Select onValueChange={setSelectedIndex}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="五十音索引" />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.keys(index).map((key) => (
-                <SelectItem key={key} value={key}>{key}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline">
+                五十音索引
+                {selectedIndex && <span className="ml-2">{selectedIndex}</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80">
+              <div className="grid gap-4">
+                <h4 className="font-medium leading-none">五十音索引</h4>
+                <div className="grid grid-cols-5 gap-2">
+                  {Object.entries(index).map(([key, value]) => (
+                    <TooltipProvider key={key}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant={selectedIndex === key ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => {
+                              setSelectedIndex(selectedIndex === key ? null : key);
+                              setCurrentPage(1);
+                            }}
+                            className="w-full"
+                          >
+                            {key}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{value.count}語</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ))}
+                </div>
+                {selectedIndex && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedIndex(null);
+                      setCurrentPage(1);
+                    }}
+                    className="mt-2"
+                  >
+                    クリア
+                  </Button>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
         <div className={`grid gap-4 ${displayMode === 'card' ? 'md:grid-cols-2 lg:grid-cols-3' : ''}`}>
           {paginatedVerbs.map((verb: Verb) => (
