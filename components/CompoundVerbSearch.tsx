@@ -108,8 +108,7 @@ export default function CompoundVerbSearch() {
     const voice = 'ja-JP-NanamiNeural';
     
     try {
-      const url = await generateAudio(text, voice);
-      const audio = new Audio(url);
+      const { url, audio } = await generateAudio(text, voice);
       
       audio.onplay = () => {
         setAudioState('playing');
@@ -143,6 +142,23 @@ export default function CompoundVerbSearch() {
       setCurrentPlayingText(null);
     }
   };
+
+  const filteredVerbs = verbs.filter((verb: Verb) =>
+    verb.headword1.includes(searchTerm) ||
+    verb.reading.includes(searchTerm) ||
+    verb.romaji.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const indexedVerbs = selectedIndex && index[selectedIndex]
+    ? verbs.slice(index[selectedIndex].start, index[selectedIndex].end + 1)
+    : filteredVerbs
+
+  const totalPages = Math.ceil(indexedVerbs.length / itemsPerPage)
+  const paginatedVerbs = indexedVerbs.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
+
   return (
     <div className={darkMode ? 'dark' : ''}>
       <div className="bg-background text-foreground min-h-screen p-4">
@@ -227,7 +243,7 @@ export default function CompoundVerbSearch() {
           </Select>
         </div>
         <div className={`grid gap-4 ${displayMode === 'card' ? 'md:grid-cols-2 lg:grid-cols-3' : ''}`}>
-          {verbs.map((verb: Verb) => (
+          {paginatedVerbs.map((verb: Verb) => (
             displayMode === 'card' ? (
               <Card key={verb.headword_id}>
                 <CardHeader>
@@ -338,10 +354,10 @@ export default function CompoundVerbSearch() {
           >
             前へ
           </Button>
-          <span>{currentPage} / {Math.ceil(verbs.length / itemsPerPage)}</span>
+          <span>{currentPage} / {totalPages}</span>
           <Button
-            onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(verbs.length / itemsPerPage)))}
-            disabled={currentPage === Math.ceil(verbs.length / itemsPerPage)}
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
           >
             次へ
           </Button>

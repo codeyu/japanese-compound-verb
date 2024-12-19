@@ -17,10 +17,13 @@ export default function useTTS() {
             // 检查缓存
             const cachedAudio = await getFromCache(cacheKey);
             if (cachedAudio) {
+                // 预先创建 Audio 对象并加载
                 const url = URL.createObjectURL(cachedAudio);
+                const audio = new Audio(url);
+                await audio.load(); // 预加载音频
                 setAudioUrl(url);
                 setAudioLoading(false);
-                return url;
+                return { url, audio }; // 返回预加载的音频对象
             }
 
             // 如果没有缓存，从API获取
@@ -37,13 +40,13 @@ export default function useTTS() {
             }
 
             const blob = await response.blob();
-            
-            // 保存到缓存
             await saveToCache(cacheKey, blob);
             
             const url = URL.createObjectURL(blob);
+            const audio = new Audio(url);
+            await audio.load(); // 预加载音频
             setAudioUrl(url);
-            return url;
+            return { url, audio }; // 返回预加载的音频对象
         } catch (e) {
             console.error('TTS error:', e);
             setAudioError(true);
@@ -53,7 +56,6 @@ export default function useTTS() {
         }
     };
 
-    // 清理函数
     const cleanup = () => {
         if (audioUrl) {
             URL.revokeObjectURL(audioUrl);
