@@ -189,27 +189,43 @@ export default function CompoundVerbSearch() {
                 <span className="sr-only">��定を開く</span>
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-80">
+            <PopoverContent className="w-96">
               <div className="grid gap-4">
-                <div className="space-y-2">
-                  <h4 className="font-medium leading-none">表示モード</h4>
-                  <div className="flex space-x-2">
-                    <Button
-                      variant={displayMode === 'card' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setDisplayMode('card')}
-                    >
-                      カード
-                    </Button>
-                    <Button
-                      variant={displayMode === 'list' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setDisplayMode('list')}
-                    >
-                      リスト
-                    </Button>
+                <div className="flex justify-between gap-4">
+                  <div className="space-y-2">
+                    <h4 className="font-medium leading-none">表示モード</h4>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant={displayMode === 'card' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setDisplayMode('card')}
+                      >
+                        カード
+                      </Button>
+                      <Button
+                        variant={displayMode === 'list' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setDisplayMode('list')}
+                      >
+                        リスト
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="font-medium leading-none">テーマ</h4>
+                    <div className="flex items-center space-x-2">
+                      <Sun className="h-[1.2rem] w-[1.2rem]" />
+                      <Switch
+                        checked={darkMode}
+                        onCheckedChange={setDarkMode}
+                        aria-label="ダークモード切替"
+                      />
+                      <Moon className="h-[1.2rem] w-[1.2rem]" />
+                    </div>
                   </div>
                 </div>
+
                 <div className="space-y-2">
                   <h4 className="font-medium leading-none">表示件数</h4>
                   <div className="flex space-x-2">
@@ -225,34 +241,16 @@ export default function CompoundVerbSearch() {
                     ))}
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <h4 className="font-medium leading-none">テーマ</h4>
-                  <div className="flex items-center space-x-2">
-                    <Sun className="h-[1.2rem] w-[1.2rem]" />
-                    <Switch
-                      checked={darkMode}
-                      onCheckedChange={setDarkMode}
-                      aria-label="ダークモード切替"
-                    />
-                    <Moon className="h-[1.2rem] w-[1.2rem]" />
-                  </div>
-                </div>
+
                 <div className="space-y-2">
                   <h4 className="font-medium leading-none">翻訳言語</h4>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex gap-2">
                     <Button
                       variant={translationLang === 'en' ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => setTranslationLang('en')}
                     >
                       English
-                    </Button>
-                    <Button
-                      variant={translationLang === 'kr' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setTranslationLang('kr')}
-                    >
-                      한국어
                     </Button>
                     <Button
                       variant={translationLang === 'sc' ? 'default' : 'outline'}
@@ -267,6 +265,13 @@ export default function CompoundVerbSearch() {
                       onClick={() => setTranslationLang('tc')}
                     >
                       繁體中文
+                    </Button>
+                    <Button
+                      variant={translationLang === 'kr' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setTranslationLang('kr')}
+                    >
+                      한국어
                     </Button>
                   </div>
                 </div>
