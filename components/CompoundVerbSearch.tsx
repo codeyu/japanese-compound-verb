@@ -33,9 +33,15 @@ type Verb = {
   senses: Array<{
     definition: string
     definition_en: string
+    definition_kr: string
+    definition_sc: string
+    definition_tc: string
     examples: Array<{
       example: string
       example_en: string
+      example_kr: string
+      example_sc: string
+      example_tc: string
     }>
   }>
 }
@@ -47,6 +53,8 @@ type Index = {
     count: number
   }
 }
+
+type TranslationLanguage = 'en' | 'kr' | 'sc' | 'tc';
 
 const verbs = verbsData as Verb[]
 const index = indexData as Index
@@ -62,6 +70,7 @@ export default function CompoundVerbSearch() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { generateAudio, cleanup } = useTTS();
   const [currentPlayingText, setCurrentPlayingText] = useState<string | null>(null);
+  const [translationLang, setTranslationLang] = useState<TranslationLanguage>('en');
 
   useEffect(() => {
     return () => {
@@ -160,6 +169,14 @@ export default function CompoundVerbSearch() {
     currentPage * itemsPerPage
   )
 
+  const getTranslation = (sense: Verb['senses'][0], type: 'definition' | 'example') => {
+    const suffix = translationLang;
+    if (type === 'definition') {
+      return sense[`definition_${suffix}`];
+    }
+    return sense.examples[0]?.[`example_${suffix}`];
+  };
+
   return (
     <div className={darkMode ? 'dark' : ''}>
       <div className="bg-background text-foreground min-h-screen p-4">
@@ -220,6 +237,39 @@ export default function CompoundVerbSearch() {
                     <Moon className="h-[1.2rem] w-[1.2rem]" />
                   </div>
                 </div>
+                <div className="space-y-2">
+                  <h4 className="font-medium leading-none">翻訳言語</h4>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant={translationLang === 'en' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setTranslationLang('en')}
+                    >
+                      English
+                    </Button>
+                    <Button
+                      variant={translationLang === 'kr' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setTranslationLang('kr')}
+                    >
+                      한국어
+                    </Button>
+                    <Button
+                      variant={translationLang === 'sc' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setTranslationLang('sc')}
+                    >
+                      简体中文
+                    </Button>
+                    <Button
+                      variant={translationLang === 'tc' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setTranslationLang('tc')}
+                    >
+                      繁體中文
+                    </Button>
+                  </div>
+                </div>
               </div>
             </PopoverContent>
           </Popover>
@@ -275,7 +325,6 @@ export default function CompoundVerbSearch() {
                 <CardContent>
                   {verb.senses.map((sense, index) => (
                     <div key={index} className="mb-4">
-                      {/* 词义部分 */}
                       <div className="mb-2">
                         <div className="flex items-start gap-2">
                           <span className="text-sm font-medium text-muted-foreground">
@@ -283,12 +332,13 @@ export default function CompoundVerbSearch() {
                           </span>
                           <div>
                             <p>{sense.definition}</p>
-                            <p className="text-sm text-muted-foreground">{sense.definition_en}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {getTranslation(sense, 'definition')}
+                            </p>
                           </div>
                         </div>
                       </div>
 
-                      {/* 例句部分 */}
                       {sense.examples && sense.examples[0] && (
                         <div className="ml-5">
                           <p className="text-sm text-muted-foreground">例文：</p>
@@ -310,7 +360,9 @@ export default function CompoundVerbSearch() {
                               <Volume2 className="h-4 w-4 text-muted-foreground" />
                             </Button>
                           </div>
-                          <p className="text-sm text-muted-foreground">{sense.examples[0].example_en}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {getTranslation(sense, 'example')}
+                          </p>
                         </div>
                       )}
                     </div>
