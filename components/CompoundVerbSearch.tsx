@@ -57,25 +57,10 @@ export default function CompoundVerbSearch() {
   const [selectedIndex, setSelectedIndex] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
-
-  const filteredVerbs = verbs.filter((verb: Verb) =>
-    verb.headword1.includes(searchTerm) ||
-    verb.reading.includes(searchTerm) ||
-    verb.romaji.toLowerCase().includes(searchTerm.toLowerCase())
-  )
-
-  const indexedVerbs = selectedIndex && index[selectedIndex]
-    ? verbs.slice(index[selectedIndex].start, index[selectedIndex].end + 1)
-    : filteredVerbs
-
-  const totalPages = Math.ceil(indexedVerbs.length / itemsPerPage)
-  const paginatedVerbs = indexedVerbs.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  )
   const [audioState, setAudioState] = useState<'idle' | 'loading' | 'playing' | 'paused'>('idle');
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { generateAudio, cleanup } = useTTS();
+  const [currentPlayingText, setCurrentPlayingText] = useState<string | null>(null);
 
   useEffect(() => {
     return () => {
@@ -83,42 +68,81 @@ export default function CompoundVerbSearch() {
     };
   }, [cleanup]);
 
+  useEffect(() => {
+    console.log('Audio state changed:', audioState);
+  }, [audioState]);
+
   const playAudio = async (text: string) => {
-    if (audioState === 'playing') {
-      audioRef.current?.pause();
-      setAudioState('paused');
+    if (audioState === 'loading') {
       return;
     }
 
-    if (audioState === 'paused') {
-      audioRef.current?.play();
-      setAudioState('playing');
-      return;
+    if (text === currentPlayingText) {
+      if (audioState === 'playing' && audioRef.current) {
+        audioRef.current.pause();
+        setAudioState('paused');
+        return;
+      }
+
+      if (audioState === 'paused' && audioRef.current) {
+        try {
+          await audioRef.current.play();
+          setAudioState('playing');
+        } catch (error) {
+          console.error('恢复放失败:', error);
+          setAudioState('idle');
+          audioRef.current = null;
+          setCurrentPlayingText(null);
+        }
+        return;
+      }
+    }
+
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
     }
 
     setAudioState('loading');
+    setCurrentPlayingText(text);
     const voice = 'ja-JP-NanamiNeural';
+    
     try {
       const url = await generateAudio(text, voice);
       const audio = new Audio(url);
-      audioRef.current = audio;
+      
+      audio.onplay = () => {
+        setAudioState('playing');
+      };
+      
+      audio.onpause = () => {
+        setAudioState('paused');
+      };
       
       audio.onended = () => {
         setAudioState('idle');
+        audioRef.current = null;
+        setCurrentPlayingText(null);
+        URL.revokeObjectURL(url);
       };
 
       audio.onerror = (e) => {
         console.error('音频播放错误:', e);
         setAudioState('idle');
+        audioRef.current = null;
+        setCurrentPlayingText(null);
+        URL.revokeObjectURL(url);
       };
 
+      audioRef.current = audio;
       await audio.play();
-      setAudioState('playing');
     } catch (error) {
       console.error('生成或播放音频失败:', error);
       setAudioState('idle');
+      audioRef.current = null;
+      setCurrentPlayingText(null);
     }
-  }
+  };
   return (
     <div className={darkMode ? 'dark' : ''}>
       <div className="bg-background text-foreground min-h-screen p-4">
@@ -203,7 +227,7 @@ export default function CompoundVerbSearch() {
           </Select>
         </div>
         <div className={`grid gap-4 ${displayMode === 'card' ? 'md:grid-cols-2 lg:grid-cols-3' : ''}`}>
-          {paginatedVerbs.map((verb: Verb) => (
+          {verbs.map((verb: Verb) => (
             displayMode === 'card' ? (
               <Card key={verb.headword_id}>
                 <CardHeader>
@@ -215,9 +239,18 @@ export default function CompoundVerbSearch() {
                       onClick={() => playAudio(verb.headword1)}
                       aria-label={`Play pronunciation for ${verb.headword1}`}
                       className="ml-1 p-0 h-auto"
-                      disabled={audioState === 'loading'}
+                      disabled={
+                        audioState === 'loading' || 
+                        audioState === 'playing' || 
+                        (audioState === 'paused' && currentPlayingText !== verb.headword1)
+                      }
+                      data-state={currentPlayingText === verb.headword1 ? audioState : 'idle'}
                     >
-                      <Volume2 className="h-4 w-4 text-muted-foreground" />
+                      <Volume2 className={`h-4 w-4 ${
+                        currentPlayingText === verb.headword1 && audioState === 'playing' 
+                          ? 'text-primary' 
+                          : 'text-muted-foreground'
+                      }`} />
                     </Button>
                   </div>
                   <CardDescription>{verb.reading}</CardDescription>
@@ -235,7 +268,12 @@ export default function CompoundVerbSearch() {
                           onClick={() => playAudio(verb.senses[0].examples[0].example)}
                           aria-label="Play example sentence"
                           className="ml-1 p-0 h-auto"
-                          disabled={audioState === 'loading'}
+                          disabled={
+                            audioState === 'loading' || 
+                            audioState === 'playing' ||
+                            (audioState === 'paused' && currentPlayingText !== verb.senses[0].examples[0].example)
+                          }
+                          data-state={currentPlayingText === verb.senses[0].examples[0].example ? audioState : 'idle'}
                         >
                           <Volume2 className="h-4 w-4 text-muted-foreground" />
                         </Button>
@@ -255,6 +293,12 @@ export default function CompoundVerbSearch() {
                     onClick={() => playAudio(verb.headword1)}
                     aria-label={`Play pronunciation for ${verb.headword1}`}
                     className="ml-1 p-0 h-auto"
+                    disabled={
+                      audioState === 'loading' || 
+                      audioState === 'playing' ||
+                      (audioState === 'paused' && currentPlayingText !== verb.headword1)
+                    }
+                    data-state={currentPlayingText === verb.headword1 ? audioState : 'idle'}
                   >
                     <Volume2 className="h-4 w-4 text-muted-foreground" />
                   </Button>
@@ -270,6 +314,12 @@ export default function CompoundVerbSearch() {
                         onClick={() => playAudio(verb.senses[0].examples[0].example)}
                         aria-label="Play example sentence"
                         className="ml-1 p-0 h-auto"
+                        disabled={
+                          audioState === 'loading' || 
+                          audioState === 'playing' ||
+                          (audioState === 'paused' && currentPlayingText !== verb.senses[0].examples[0].example)
+                        }
+                        data-state={currentPlayingText === verb.senses[0].examples[0].example ? audioState : 'idle'}
                       >
                         <Volume2 className="h-4 w-4 text-muted-foreground" />
                       </Button>
@@ -288,10 +338,10 @@ export default function CompoundVerbSearch() {
           >
             前へ
           </Button>
-          <span>{currentPage} / {totalPages}</span>
+          <span>{currentPage} / {Math.ceil(verbs.length / itemsPerPage)}</span>
           <Button
-            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(verbs.length / itemsPerPage)))}
+            disabled={currentPage === Math.ceil(verbs.length / itemsPerPage)}
           >
             次へ
           </Button>
