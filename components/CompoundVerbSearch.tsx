@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -23,6 +23,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 
 import verbsData from '@/data/verbs.json'
 import indexData from '@/data/index.json'
+import useTTS from '@/components/useTTS';
 
 type Verb = {
   headword_id: number
@@ -72,12 +73,47 @@ export default function CompoundVerbSearch() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   )
+  const [audioState, setAudioState] = useState<'idle' | 'loading' | 'playing' | 'paused'>('idle');
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const { generateAudio } = useTTS();
+  const playAudio = async (text: string) => {
+    if (audioState === 'playing') {
+      audioRef.current?.pause();
+      setAudioState('paused');
+      return;
+    }
 
-  const playAudio = (text: string) => {
-    console.log(`Playing audio for: ${text}`);
-    // ここに実際の音声再生ロジックを実装します
+    if (audioState === 'paused') {
+      audioRef.current?.play();
+      setAudioState('playing');
+      return;
+    }
+
+    setAudioState('loading');
+    const voice = 'ja-JP-NanamiNeural';
+    try {
+      const url = await generateAudio(text, voice, { pitch: 0, rate: 0 });
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      
+      audio.onended = () => {
+        setAudioState('idle');
+        URL.revokeObjectURL(url);
+      };
+
+      audio.onerror = (e) => {
+        console.error('音频播放错误:', e);
+        setAudioState('idle');
+        URL.revokeObjectURL(url);
+      };
+
+      await audio.play();
+      setAudioState('playing');
+    } catch (error) {
+      console.error('生成或播放音频失败:', error);
+      setAudioState('idle');
+    }
   }
-
   return (
     <div className={darkMode ? 'dark' : ''}>
       <div className="bg-background text-foreground min-h-screen p-4">
@@ -174,6 +210,7 @@ export default function CompoundVerbSearch() {
                       onClick={() => playAudio(verb.headword1)}
                       aria-label={`Play pronunciation for ${verb.headword1}`}
                       className="ml-1 p-0 h-auto"
+                      disabled={audioState === 'loading'}
                     >
                       <Volume2 className="h-4 w-4 text-muted-foreground" />
                     </Button>
@@ -193,6 +230,7 @@ export default function CompoundVerbSearch() {
                           onClick={() => playAudio(verb.senses[0].examples[0].example)}
                           aria-label="Play example sentence"
                           className="ml-1 p-0 h-auto"
+                          disabled={audioState === 'loading'}
                         >
                           <Volume2 className="h-4 w-4 text-muted-foreground" />
                         </Button>
